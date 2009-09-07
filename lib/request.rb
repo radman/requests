@@ -9,11 +9,7 @@ class Request < ActiveRecord::Base
   before_update :update_responded_at_if_responded
   after_update  :send_response_email_if_responded
 
-  named_scope :to_assume_vacant_account,  :conditions => { :type => 'AssumeVacantClientAccountRequest' }  
-  named_scope :to_add_client,             :conditions => { :type => 'AddClientRequest' }
-  named_scope :to_add_partner,            :conditions => { :type => 'AddPartnerRequest' }
-  named_scope :to_add_professional_coach, :conditions => { :type => 'AddProfessionalCoachRequest' }
-  named_scope :with_no_response,          :conditions => { :response => :none }
+  named_scope :with_no_response, :conditions => { :response => :none }
     
   def recipient
     @recipient ||= User.find_by_email(self.recipient_email)
@@ -35,6 +31,10 @@ class Request < ActiveRecord::Base
     return true
   end
   
+  ###################################
+  ## PROTECTED METHODS
+  ###################################
+
   protected
 
   def before_create
@@ -73,4 +73,24 @@ class Request < ActiveRecord::Base
       end
     end
   end
+    
+  ###################################
+  ## PRIVATE METHODS
+  ###################################
+  
+  private
+
+  def self.request_types
+    request_types = []
+    Dir[RAILS_ROOT+'/app/models/requests/*_request.rb'].each do |file|
+      request_types << File.basename(file, '.rb').camelize.constantize
+    end
+    request_types
+  end
+      
+  request_types.each do |request_type|
+    named_scope ('to_' + request_type.to_s.gsub(/Request$/, '').underscore).to_sym,
+      :conditions => { :type => request_type.to_s }
+  end
+  
 end
