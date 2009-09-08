@@ -3,7 +3,7 @@ class AddRequests < ActiveRecord::Migration
     create_table :requests do |t|
       t.integer :sender_id
       t.string :recipient_email, :type, :token
-      t.datetime :sent_at, :responded_at
+      t.datetime :responded_at
       
       t.enum :response, :limit => [:none, :accept, :deny], :default => :none
       
