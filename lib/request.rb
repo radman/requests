@@ -3,8 +3,8 @@ class Request < ActiveRecord::Base
   validate_on_create :is_unique_request
   
   def accept!
-    self.response = :accept
-    self.save!
+    response = :accept
+    save!
   end
 
   def created
