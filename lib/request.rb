@@ -5,14 +5,14 @@ class Request < ActiveRecord::Base
   def accept!
     update_attributes! :response => :accept
   end
-
-  def created
-    raise "Request.created must be implemented by all subclasses of Request"
-  end
   
-  def accepted
-    raise "Request.accepted must be implemented by all subclasses of Request"
+  def deny!
+    update_attributes! :response => :deny
   end
+
+  def created; end
+  def accepted; end
+  def denied; end
   
   protected
   
