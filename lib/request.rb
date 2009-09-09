@@ -1,7 +1,7 @@
 class Request < ActiveRecord::Base
   validates_presence_of :recipient_email
   validate_on_create :is_unique_request
-  
+    
   def accept!
     update_attributes! :response => :accept
   end
@@ -15,6 +15,18 @@ class Request < ActiveRecord::Base
   def after_deny; end
   
   protected
+
+  def self.validate_on_accept(*methods)
+    self.validate_on_update(methods, :if => Proc.new { |request| 
+      request.changed.include?('response') && request.response == :accept 
+    })
+  end
+  
+  def self.validate_on_deny(*methods)
+    self.validate_on_update(methods, :if => Proc.new { |request| 
+      request.changed.include?('response') && request.response == :deny 
+    })
+  end
   
   def is_unique_request
     if Request.exists?(:recipient_email => recipient_email, :type => type, :response => :none)
