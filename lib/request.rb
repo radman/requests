@@ -10,9 +10,9 @@ class Request < ActiveRecord::Base
     update_attributes! :response => :deny
   end
 
-  def created; end
-  def accepted; end
-  def denied; end
+  def after_create; end # this shouldn't be necessary
+  def after_accept; end
+  def after_deny; end
   
   protected
   

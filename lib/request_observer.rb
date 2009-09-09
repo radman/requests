@@ -4,7 +4,7 @@ class RequestObserver < ActiveRecord::Observer
   end
 
   def after_create(request)
-    request.created
+    request.after_create
   end
   
   def before_update(request)
@@ -13,8 +13,8 @@ class RequestObserver < ActiveRecord::Observer
   
   def after_update(request)
     request.changed.include?('response') && case request.response
-      when :accept then request.accepted
-      when :deny then request.denied
+      when :accept then request.after_accept
+      when :deny then request.after_deny
     end
   end
 
