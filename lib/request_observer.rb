@@ -1,5 +1,5 @@
 class RequestObserver < ActiveRecord::Observer  
-  def before_create(request)  
+  def before_create(request)
     request.token = generate_token
   end
 
@@ -8,7 +8,7 @@ class RequestObserver < ActiveRecord::Observer
   end
   
   def before_update(request)
-    request.responded_at = DateTime.now if request.changed.include?('response')
+    request.changed.include?('response') && request.responded_at = DateTime.now
   end
   
   def after_update(request)
