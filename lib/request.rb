@@ -1,4 +1,7 @@
 class Request < ActiveRecord::Base
+  belongs_to :sender, :class_name => 'User' # TODO: try to remove coupling with User
+  belongs_to :recipient, :class_name => 'User', :primary_key => 'email', :foreign_key => 'recipient_email' # TODO: try to remove coupling with User.email
+  
   validates_presence_of :recipient_email
   validate_on_create :is_unique_request
     
