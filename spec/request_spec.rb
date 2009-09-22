@@ -1,4 +1,3 @@
-# TODO: remove coupling to Noomii's app
 # TODO: try to refactor after_accept, after_deny tests
 # TODO: see if there's a better way to express the "duplicate requests" context and all its cases
 # TODO: try and remove coupling to User model
@@ -6,17 +5,58 @@
 # TODO: test validation messages
 # TODO: Move tests to plugin and make them db-independent (using schema generator, etc. -- for example, check bullet's specs)
 
-require "#{File.expand_path(__FILE__).split('/')[0..-6].join('/')}/spec/spec_helper"
+require 'active_record'
+require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/lib/request"
+
+ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :dbfile => ':memory:')
 
 describe Request do
+  def setup_db
+    ActiveRecord::Schema.define(:version => 1) do
+      create_table :users do |t|
+        t.string :email
+      end
+      
+      create_table :requests do |t|
+        t.integer :sender_id
+        t.string :recipient_email, :type, :token
+        t.text :message
+        t.datetime :responded_at
+        
+        t.string :response, :default => 'none' # TODO: this has to be done on actual migration
+
+        t.timestamps
+      end      
+    end    
+  end
+  
+  def teardown_db
+    ActiveRecord::Base.connection.tables.each do |table|
+      ActiveRecord::Base.connection.drop_table(table)
+    end    
+  end
+  
   before(:all) do
+    setup_db
     class RandomRequest < Request; end
     class DifferentRandomRequest < Request; end   
+    
+    class User < ActiveRecord::Base; end # stub
+  end
+  
+  after(:all) do
+    teardown_db
+  end
+  
+  before(:each) do
+    # TODO: kinda hacky, try and use transactions somehow
+    Request.delete_all
+    User.delete_all
   end
   
   context "on creation" do
-    it "should be invalid if a response other than :none is specified" do
-      @request = RandomRequest.new(:recipient_email => 'coolguy@noomiixx.com', :response => :accept)
+    it "should be invalid if a response other than 'none' is specified" do
+      @request = RandomRequest.new(:recipient_email => 'coolguy@noomiixx.com', :response => 'accept')
       @request.should_not be_valid
     end
     
@@ -26,44 +66,44 @@ describe Request do
     end
     
     it "should have a recipient that references a user, if a user with that email exists" do
-      radu = User.make(:email => 'radu@noomiixx.com')
+      radu = User.create!(:email => 'radu@noomiixx.com')
       @request = RandomRequest.create!(:recipient_email => 'radu@noomiixx.com')
       @request.recipient.id.should == radu.id
     end    
   end
-
+  
   context "after being created" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
     
-    it "should have a response of :none" do
-      @request.response.should == :none
+    it "should have a response of 'none'" do
+      @request.response.should == 'none'
     end
-
+  
     it "should have responded_at set to nil" do
       @request.responded_at.should be_nil
     end
-
+  
     it "should have a token" do
       @request.token.should_not be_nil
     end
     
     it "can be accepted" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.should be_valid
     end
     
     it "can be denied" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.should be_valid
     end
     
     it "can only be accepted or denied" do
-      @request.response = :random_response
+      @request.response = 'random_response'
       @request.should_not be_valid    
     end  
-
+  
     it "should not update responded_at if response field does not change" do
       @request.recipient_email = "raduasdf@noomiixxx.com"
       @request.save!
@@ -74,50 +114,50 @@ describe Request do
   context "after being accepted" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
-      @request.response = :accept
+      @request.response = 'accept'
       @request.save!
     end
-
+  
     it "should update responded_at" do
       @request.responded_at.should_not be_nil
     end
-
+  
     it "cannot be denied" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.should_not be_valid
     end
-
-    it "cannot have its response set back to :none" do
-      @request.response = :none
+  
+    it "cannot have its response set back to 'none'" do
+      @request.response = 'none'
       @request.should_not be_valid
     end 
   end
-
+  
   context "after being denied" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
-      @request.response = :deny
+      @request.response = 'deny'
       @request.save!
     end
-
+  
     it "should update responded_at" do
       @request.responded_at.should_not be_nil
     end
-
+  
     it "cannot be accepted" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.should_not be_valid
     end
-
-    it "cannot have its response set back to :none" do
-      @request.response = :none
+  
+    it "cannot have its response set back to 'none'" do
+      @request.response = 'none'
       @request.should_not be_valid
     end 
   end 
-
+  
   context "duplicate requests" do
     before(:each) do
-      @sender = User.make
+      @sender = User.create!(:email => 'thesender@noomiixx.com')
       @request = RandomRequest.create!(:sender => @sender, :recipient_email => 'coolguy@noomiixx.com')
     end
     
@@ -125,63 +165,63 @@ describe Request do
       @duplicate_request = RandomRequest.new(:sender => @sender, :recipient_email => 'coolguy@noomiixx.com')
       @duplicate_request.should_not be_valid
     end
-
+  
     it "should be valid if it has no response and has the same type, sender as another unresponded request, but different recipient_email" do
       @duplicate_request = RandomRequest.new(:sender => @sender, :recipient_email => 'awesomedude@noomiixx.com')
       @duplicate_request.should be_valid
     end
-
+      
     it "should be valid if it has no response and has the same type, recipient_email as another unresponded request, but different sender" do
-      different_sender = User.make    
+      different_sender = User.create!(:email => 'coolersender@noomiixx.com')
       @duplicate_request = RandomRequest.new(:sender => different_sender, :recipient_email => 'coolguy@noomiixx.com')
       @duplicate_request.should be_valid
     end
-
+      
     it "should be valid if it has no response and has the same sender, recipient_email as another unresponded request, but different type" do
       @duplicate_request = DifferentRandomRequest.new(:sender => @sender, :recipient_email => 'coolguy@noomiixx.com')
       @duplicate_request.should be_valid
     end
-
+      
     it "should be valid if it has no response and has the same sender, recipient_email, type as another request which has already been responded to" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.save!
-
+      
       @duplicate_request = RandomRequest.new(:sender => @sender, :recipient_email => 'coolguy@noomiixx.com')
       @duplicate_request.should be_valid
     end    
   end
-
+  
   context "callbacks" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
     
     it "should invoke after_accept callback on being accepted" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.should_receive(:after_accept)
       @request.save!
     end
     
     it "should invoke after_deny callback on being denied" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.should_receive(:after_deny)
       @request.save!
     end
     
     it "should not invoke after_deny callback on being accepted" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.should_not_receive(:after_deny)
       @request.save!
     end    
     
     it "should not invoke after_accept callback on being denied" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.should_not_receive(:after_accept)
       @request.save!
     end
     
     it "should not invoke after_deny callback if response doesn't change" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.save!
       @request.recipient_email = "radu@noomiixx.com"
       @request.should_not_receive(:after_deny)
@@ -189,7 +229,7 @@ describe Request do
     end    
     
     it "should not invoke after_accept if response doesn't change" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.save!
       @request.recipient_email = "radu@noomiixx.com"
       @request.should_not_receive(:after_accept)
@@ -214,27 +254,27 @@ describe Request do
     before(:each) do
       @request = ValidatedRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
-
+  
     it "should invoke validate_on_accept methods on being accepted" do
-      @request.response = :accept
+      @request.response = 'accept'
       @request.should_receive(:method1)
       @request.should_receive(:method2)
       @request.save!
     end
     
     it "should invoke validate_on_deny methods on being denied" do
-      @request.response = :deny
+      @request.response = 'deny'
       @request.should_receive(:method1)
       @request.should_receive(:method3)
       @request.save!
     end
   end
-
+  
   describe "accept method" do
-    it "should set the response to :accept" do
+    it "should set the response to 'accept'" do
       @request = RandomRequest.create!(:recipient_email => 'radu@noomiixx.com')
       @request.accept
-      @request.response.should == :accept
+      @request.response.should == 'accept'
     end
     
     it "should soft-save the request" do
@@ -245,10 +285,10 @@ describe Request do
   end
   
   describe "deny method" do
-    it "should set the response to :deny" do
+    it "should set the response to 'deny'" do
       @request = RandomRequest.create!(:recipient_email => 'radu@noomiixx.com')
       @request.deny
-      @request.response.should == :deny
+      @request.response.should == 'deny'
     end
     
     it "should soft-save the request" do

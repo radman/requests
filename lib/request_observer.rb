@@ -9,8 +9,8 @@ class RequestObserver < ActiveRecord::Observer
 
   def after_update(request)
     request.changed.include?('response') && case request.response
-      when :accept then request.after_accept
-      when :deny then request.after_deny
+      when 'accept' then request.after_accept
+      when 'deny' then request.after_deny
     end
   end
 
