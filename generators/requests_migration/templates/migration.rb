@@ -6,7 +6,7 @@ class AddRequests < ActiveRecord::Migration
       t.text :message
       t.datetime :responded_at
       
-      t.enum :response, :limit => [:none, :accept, :deny], :default => :none
+      t.string :response, 'none'
       
       t.timestamps
     end

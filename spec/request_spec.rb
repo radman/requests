@@ -1,10 +1,3 @@
-# TODO: try to refactor after_accept, after_deny tests
-# TODO: see if there's a better way to express the "duplicate requests" context and all its cases
-# TODO: try and remove coupling to User model
-
-# TODO: test validation messages
-# TODO: Move tests to plugin and make them db-independent (using schema generator, etc. -- for example, check bullet's specs)
-
 require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/spec/spec_helper"
 
 describe Request do

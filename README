@@ -1,13 +1,29 @@
 Requests
 ========
 
-Introduction goes here.
+A requests plugin originally extracted from the Noomii app and also in use on Sociables.
 
 
 Example
 =======
 
-Example goes here.
+class FriendRequest < Request
+  validate_after_accept :do_stuff
+  validate_after_deny :do_other_stuff
+
+  def after_accept
+    # ...
+  end
+  
+  def after_deny
+    # ...
+  end
+  
+  private
+  
+  # ...
+
+end
 
 
-Copyright (c) 2009 [name of plugin creator], released under the MIT license
+Copyright (c) 2009 Radu Andrei Vlad, released under the MIT license

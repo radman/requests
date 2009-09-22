@@ -1,8 +1,3 @@
-# TODO: try to remove coupling to User class
-# TODO: response 'none' should be replace by nil
-# TODO: get rid of observer
-require 'digest' # TODO: should this be here or in the initializer? (note: moving it will require adding it to the test file)
-
 class Request < ActiveRecord::Base
   belongs_to :sender, :class_name => 'User'
   belongs_to :recipient, :class_name => 'User', 
@@ -47,18 +42,19 @@ class Request < ActiveRecord::Base
   end
    
   def before_update
-    self.responded_at = DateTime.now if self.changed.include?('response')
+    self.responded_at = DateTime.now if changed.include?('response')
   end
   
   def after_update
-    return unless self.changed.include?('response')
+    return unless changed.include?('response')
     
-    case self.response
-      when 'accept' then self.after_accept
-      when 'deny' then self.after_deny
+    case response
+      when 'accept' then after_accept
+      when 'deny' then after_deny
     end
   end
   
+
   private
 
   ###################################

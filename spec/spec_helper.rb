@@ -1,3 +1,4 @@
+require 'digest'
 require 'active_record'
 require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/lib/request"
 
@@ -16,7 +17,7 @@ Spec::Runner.configure do |config|
         t.text :message
         t.datetime :responded_at
         
-        t.string :response, :default => 'none' # TODO: this has to be done on actual migration
+        t.string :response, :default => 'none'
 
         t.timestamps
       end      
@@ -41,11 +42,8 @@ Spec::Runner.configure do |config|
     teardown_db
   end
   
-  # TODO: kinda hacky, try and use transactions somehow
   config.before(:each) do
     Request.delete_all
     User.delete_all    
   end
-
-
 end
