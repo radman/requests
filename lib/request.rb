@@ -62,11 +62,11 @@ class Request < ActiveRecord::Base
   ###################################
   
   def no_response
-    errors.add_to_base 'Cannot respond to a request that has not been created.' if response != 'none'
+    errors.add_to_base 'Cannot respond to a request that has not been created.' if response != nil
   end
     
   def is_unique
-    if Request.exists?(:sender_id => sender_id, :recipient_email => recipient_email, :type => type, :response => 'none')
+    if Request.exists?(:sender_id => sender_id, :recipient_email => recipient_email, :type => type, :response => nil)
       errors.add_to_base 'There is already an outstanding request.'
     end
   end

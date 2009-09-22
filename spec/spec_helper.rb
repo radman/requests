@@ -17,7 +17,7 @@ Spec::Runner.configure do |config|
         t.text :message
         t.datetime :responded_at
         
-        t.string :response, :default => 'none'
+        t.string :response, :default => nil
 
         t.timestamps
       end      

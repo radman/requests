@@ -3,7 +3,7 @@ require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/spec/spec_hel
 describe Request do
   
   describe "on creation" do
-    it "should be invalid if a response other than 'none' is specified" do
+    it "should be invalid if a response other than nil is specified" do
       @request = RandomRequest.new(:recipient_email => 'coolguy@noomiixx.com', :response => 'accept')
       @request.should_not be_valid
     end
@@ -25,8 +25,8 @@ describe Request do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
     
-    it "should have a response of 'none'" do
-      @request.response.should == 'none'
+    it "should have response set to nil" do
+      @request.response.should be_nil
     end
   
     it "should have responded_at set to nil" do
@@ -75,8 +75,8 @@ describe Request do
       @request.should_not be_valid
     end
   
-    it "cannot have its response set back to 'none'" do
-      @request.response = 'none'
+    it "cannot have its response set back to nil" do
+      @request.response = nil
       @request.should_not be_valid
     end 
   end
@@ -97,8 +97,8 @@ describe Request do
       @request.should_not be_valid
     end
   
-    it "cannot have its response set back to 'none'" do
-      @request.response = 'none'
+    it "cannot have its response set back to nil" do
+      @request.response = nil
       @request.should_not be_valid
     end 
   end 
