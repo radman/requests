@@ -5,56 +5,11 @@
 # TODO: test validation messages
 # TODO: Move tests to plugin and make them db-independent (using schema generator, etc. -- for example, check bullet's specs)
 
-require 'active_record'
-require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/lib/request"
-
-ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :dbfile => ':memory:')
+require "#{File.expand_path(__FILE__).split('/')[0..-3].join('/')}/spec/spec_helper"
 
 describe Request do
-  def setup_db
-    ActiveRecord::Schema.define(:version => 1) do
-      create_table :users do |t|
-        t.string :email
-      end
-      
-      create_table :requests do |t|
-        t.integer :sender_id
-        t.string :recipient_email, :type, :token
-        t.text :message
-        t.datetime :responded_at
-        
-        t.string :response, :default => 'none' # TODO: this has to be done on actual migration
-
-        t.timestamps
-      end      
-    end    
-  end
   
-  def teardown_db
-    ActiveRecord::Base.connection.tables.each do |table|
-      ActiveRecord::Base.connection.drop_table(table)
-    end    
-  end
-  
-  before(:all) do
-    setup_db
-    class RandomRequest < Request; end
-    class DifferentRandomRequest < Request; end   
-    
-    class User < ActiveRecord::Base; end # stub
-  end
-  
-  after(:all) do
-    teardown_db
-  end
-  
-  before(:each) do
-    # TODO: kinda hacky, try and use transactions somehow
-    Request.delete_all
-    User.delete_all
-  end
-  
-  context "on creation" do
+  describe "on creation" do
     it "should be invalid if a response other than 'none' is specified" do
       @request = RandomRequest.new(:recipient_email => 'coolguy@noomiixx.com', :response => 'accept')
       @request.should_not be_valid
@@ -72,7 +27,7 @@ describe Request do
     end    
   end
   
-  context "after being created" do
+  describe "after being created" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
@@ -111,7 +66,7 @@ describe Request do
     end
   end
   
-  context "after being accepted" do
+  describe "after being accepted" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
       @request.response = 'accept'
@@ -133,7 +88,7 @@ describe Request do
     end 
   end
   
-  context "after being denied" do
+  describe "after being denied" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
       @request.response = 'deny'
@@ -155,7 +110,7 @@ describe Request do
     end 
   end 
   
-  context "duplicate requests" do
+  describe "duplicate requests" do
     before(:each) do
       @sender = User.create!(:email => 'thesender@noomiixx.com')
       @request = RandomRequest.create!(:sender => @sender, :recipient_email => 'coolguy@noomiixx.com')
@@ -191,7 +146,7 @@ describe Request do
     end    
   end
   
-  context "callbacks" do
+  describe "callbacks" do
     before(:each) do
       @request = RandomRequest.create!(:recipient_email => 'coolguy@noomiixx.com')
     end
@@ -237,7 +192,7 @@ describe Request do
     end
   end
   
-  context "when validation callbacks are defined" do
+  describe "when validation callbacks are defined" do
     before(:all) do
       class ValidatedRequest < Request
         validate_on_accept :method1, :method2
@@ -297,4 +252,5 @@ describe Request do
       @request.deny
     end
   end  
+
 end
